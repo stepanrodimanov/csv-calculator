@@ -18,3 +18,10 @@ make clean
 ```
 ./csvreader <your_file>.csv
 ```  
+
+### Tests
+```
+make
+cd tests
+python run_tests.py 
+```

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
+#include <errno.h>
 #include "evaluator.h"
 #include "utils.h"
 
@@ -118,15 +120,47 @@ int parse_address(const char* str, char* col_name, int* row_num) {
         j++;
     }
     
-    *row_num = atoi(str + i);
+    char* endptr;
+    errno = 0;
+    long num = strtol(str + i, &endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE || num <= 0 || num > INT_MAX) {
+        return 1;
+    }
+    *row_num = (int)num;
     return 0;
 }
 
 int apply_operation(Formula* f, int left, int right, Cell* cell) {
+    long long result; 
+    
     switch (f->op) {
-        case '+': return left + right;
-        case '-': return left - right;
-        case '*': return left * right;
+        case '+':
+            result = (long long)left + (long long)right;
+            if (result > INT_MAX || result < INT_MIN) {
+                cell->error = 1;
+                fprintf(stderr, "Error: integer overflow in addition\n");
+                return 0;
+            }
+            return (int)result;
+            
+        case '-':
+            result = (long long)left - (long long)right;
+            if (result > INT_MAX || result < INT_MIN) {
+                cell->error = 1;
+                fprintf(stderr, "Error: integer overflow in subtraction\n");
+                return 0;
+            }
+            return (int)result;
+            
+        case '*':
+            result = (long long)left * (long long)right;
+            if (result > INT_MAX || result < INT_MIN) {
+                cell->error = 1;
+                fprintf(stderr, "Error: integer overflow in multiplication\n");
+                return 0;
+            }
+            return (int)result;
+            
         case '/':
             if (right == 0) {
                 cell->error = 1;
@@ -134,6 +168,7 @@ int apply_operation(Formula* f, int left, int right, Cell* cell) {
                 return 0;
             }
             return left / right;
+            
         default:
             cell->error = 1;
             return 0;
@@ -141,8 +176,24 @@ int apply_operation(Formula* f, int left, int right, Cell* cell) {
 }
 
 int get_operand_value(Table* table, Cell* cell, const char* operand) {
-    if (is_number((char*)operand)) {
-        return atoi(operand);
+    int is_num = 1;
+    for (int i = 0; operand[i]; i++) {
+        if (i == 0 && operand[i] == '-') continue;
+        if (!isdigit(operand[i])) {
+            is_num = 0;
+            break;
+        }
+    }
+    
+    if (is_num) {
+        char* endptr;
+        errno = 0;
+        long num = strtol(operand, &endptr, 10);
+        if (*endptr != '\0' || errno == ERANGE || num < INT_MIN || num > INT_MAX) {
+            cell->error = 1;
+            return 0;
+        }
+        return (int)num;
     }
     
     int name_len = 0;
@@ -174,7 +225,7 @@ int evaluate_cell(Table* table, int row_idx, int col_idx) {
     if (cell->visited == 2 && !cell->error) return cell->value;
     if (cell->visited == 1) {
         cell->error = 1;
-        fprintf(stderr, "Error: cyclic dependency\n");
+        fprintf(stderr, "Error: cyclic dependency at cell [%d][%d]\n", row_idx, col_idx);
         return 0;
     }
     

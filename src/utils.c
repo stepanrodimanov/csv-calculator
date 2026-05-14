@@ -8,7 +8,7 @@
 int is_number(char* s) {
     if (!s || !*s) return 0;
     int i = 0;
-    if (s[i] == '-') i++;
+    if (s[i] == '-' || s[i] == '+') i++;
     if (!isdigit(s[i])) return 0;
     while (s[i]) {
         if (!isdigit(s[i])) return 0;
