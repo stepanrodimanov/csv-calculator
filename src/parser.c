@@ -47,7 +47,6 @@ int parse_data(Table* table, char* line) {
     char* token = strtok(line, ",");
     if (!token) return 1;
     
-    // Номер строки
     for (int i = 0; token[i]; i++) {
         if (!isdigit(token[i]) && token[i] != '-') {
             fprintf(stderr, "Error: invalid row number '%s'\n", token);
@@ -64,7 +63,6 @@ int parse_data(Table* table, char* line) {
     }
     int row_num = (int)row_long;
     
-    // Дубликат строки
     for (int i = 0; i < table->row_count; i++) {
         if (table->row_numbers[i] == row_num) {
             fprintf(stderr, "Error: duplicate row number %d\n", row_num);
@@ -72,7 +70,6 @@ int parse_data(Table* table, char* line) {
         }
     }
     
-    // Выделяем память
     int* new_row_numbers = realloc(table->row_numbers, (table->row_count + 1) * sizeof(int));
     if (!new_row_numbers) return 1;
     table->row_numbers = new_row_numbers;
@@ -85,7 +82,6 @@ int parse_data(Table* table, char* line) {
     table->cells[table->row_count] = calloc(table->col_count, sizeof(Cell));
     if (!table->cells[table->row_count]) return 1;
     
-    // Заполняем ячейки
     int col = 0;
     while ((token = strtok(NULL, ",")) != NULL) {
         if (col >= table->col_count) {
