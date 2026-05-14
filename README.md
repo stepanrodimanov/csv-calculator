@@ -6,7 +6,6 @@ A command-line tool that reads CSV files, parses headers and data, evaluates ari
 ### Compile
 
 ```
-cd src
 make
 ```
 
@@ -14,3 +13,8 @@ make
 ```
 make clean
 ```
+
+### Run
+```
+./csvreader <your_file>.csv
+```  
